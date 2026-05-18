@@ -1,4 +1,4 @@
-# 📈 MLOps: Sistem Prediksi Harga Cryptocurrency Real-time
+# MLOps: Sistem Prediksi Harga Cryptocurrency Real-time
 
 Proyek ini merupakan implementasi *end-to-end Machine Learning Operations* (MLOps) untuk memprediksi harga Bitcoin (BTC/USD) secara *real-time*. Sistem ini memanfaatkan data dinamis dari CoinGecko API dan menerapkan pendekatan *Continual Learning* untuk mendeteksi *data drift* serta melakukan *retraining* model secara otomatis.
 
@@ -35,9 +35,9 @@ Proyek ini dirancang agar 100% *reproducible* menggunakan **GitHub Codespaces**.
    - Menginstal Python 3.10.
    - Menginstal semua dependensi dari `requirements.txt` (Pandas, Scikit-learn, MLflow, FastAPI, dll).
    - Menyiapkan ekstensi VS Code (Jupyter, GitLens).
-5. Setelah VS Code terbuka di browser, Anda bisa langsung menjalankan *script* melalui terminal yang tersedia di bagian bawah layar.
+5. Setelah VS Code terbuka di browser, VS Code sudah bisa langsung menjalankan *script* melalui terminal yang tersedia di bagian bawah layar.
 
-## 📌 Alur Kerja / Pipeline Mendatang (Roadmap)
+## Alur Kerja / Pipeline Mendatang (Roadmap)
 1. **Data Ingestion:** *Fetching* data periodik dari CoinGecko setiap 10 menit via Airflow.
 2. **Feature Engineering:** Ekstraksi indikator teknikal (RSI, MA) dan penyimpanan ke Feature Store.
 3. **Model Training & Registry:** Pelatihan model *time-series* dan pencatatan eksperimen via MLflow.

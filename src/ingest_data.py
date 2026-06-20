@@ -11,17 +11,13 @@ def fetch_coingecko_data():
         "days": "7"
     }
     
-    # --- MODIFIKASI: Parameter Error Handling ---
     max_retries = 3
     base_delay = 30 # Waktu tunggu dasar 30 detik
     
-    # Pastikan folder ada sebelum menyimpan file
     os.makedirs("data/raw", exist_ok=True)
-    # ------------------------------------------
 
     print("Memulai pengambilan data dari CoinGecko API...")
     
-    # --- MODIFIKASI: Logika pengulangan (Retry) & Exponential Backoff ---
     for attempt in range(max_retries):
         try:
             response = requests.get(url, params=params, timeout=10)
@@ -43,14 +39,12 @@ def fetch_coingecko_data():
         except requests.exceptions.RequestException as e:
             print(f"Percobaan {attempt + 1} Gagal karena masalah koneksi: {e}")
         
-        # Jika belum percobaan terakhir, lakukan backoff
         if attempt < max_retries - 1:
             sleep_time = base_delay * (2 ** attempt) # Menghasilkan jeda 30s, lalu 60s
             print(f"Menerapkan exponential backoff. Menunggu {sleep_time} detik sebelum mencoba lagi...\n")
             time.sleep(sleep_time)
             
     print("Pengambilan data dihentikan. Gagal setelah maksimal 3 kali percobaan.")
-    # ----------------------------------------------------------------------
 
 if __name__ == "__main__":
     fetch_coingecko_data()

@@ -43,3 +43,20 @@ Proyek ini dirancang agar 100% *reproducible* menggunakan **GitHub Codespaces**.
 3. **Model Training & Registry:** Pelatihan model *time-series* dan pencatatan eksperimen via MLflow.
 4. **Model Deployment:** Ekspos REST API menggunakan FastAPI untuk melayani prediksi harga.
 5. **Monitoring & Retraining:** Pemantauan *data drift* via Evidently AI untuk memicu *retraining* model secara otomatis.
+
+# MLOps-Prediksi-Harga-Crypto
+Repositori untuk proyek Sistem Prediksi Harga Cryptocurrency Real-time berbasis Continual Learning.
+
+## Struktur Direktori Proyek
+```text
+├── .dvc/               # Konfigurasi internal Data Version Control
+├── data/
+│   ├── processed/      # Menyimpan file .csv siap latih (diabaikan oleh Git, dilacak DVC)
+│   ├── raw/            # Menyimpan respons mentah JSON API (diabaikan oleh Git, dilacak DVC)
+│   ├── processed.dvc   # File metadata penunjuk DVC untuk direktori processed
+│   └── raw.dvc         # File metadata penunjuk DVC untuk direktori raw
+├── src/
+│   ├── ingest_data.py  # Skrip pengumpul data dinamis dengan mekanisme Exponential Backoff
+│   └── preprocess.py   # Skrip otomasi pembersihan data & feature engineering
+└── README.md
+

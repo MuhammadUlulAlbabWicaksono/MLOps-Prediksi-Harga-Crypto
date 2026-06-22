@@ -1,20 +1,19 @@
 # Data Ingestion & Processing
-requests==2.31.0
-pandas==2.2.0
-numpy==1.26.4
-ta-lib==0.4.28
+requests>=2.31.0
+pandas>=2.2.0
+numpy>=1.26.4
 
 # Machine Learning
-scikit-learn==1.4.0
-xgboost==2.0.3
+scikit-learn>=1.4.0
+xgboost>=2.0.3
 
 # MLOps & Tracking
-mlflow==2.10.2
+mlflow>=2.10.2
 
 # Serving / API
-fastapi==0.109.2
-uvicorn==0.27.1
+fastapi>=0.109.2
+uvicorn>=0.27.1
 
 # Database / Storage Connectors
-psycopg2-binary==2.9.9
-minio==7.2.4
+psycopg2-binary>=2.9.9
+minio>=7.2.4

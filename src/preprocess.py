@@ -3,7 +3,6 @@ import glob
 import json
 import pandas as pd
 import numpy as np
-import talib
 
 def preprocess_latest_data():
     raw_files = glob.glob("data/raw/btc_raw_*.json")
@@ -29,17 +28,25 @@ def preprocess_latest_data():
     
     df.ffill(inplace=True)
     
-    print("Mengekstraksi fitur teknikal (MA, RSI, MACD)...")
-    prices = df['price'].values
+    print("Mengekstraksi fitur teknikal (MA, RSI, MACD) menggunakan Pandas native...")
+    prices = df['price']
     
-    df['MA_7'] = talib.SMA(prices, timeperiod=7)
-    df['MA_30'] = talib.SMA(prices, timeperiod=30)
+    # 1. Moving Averages (MA)
+    df['MA_7'] = prices.rolling(window=7).mean()
+    df['MA_30'] = prices.rolling(window=30).mean()
     
-    df['RSI_14'] = talib.RSI(prices, timeperiod=14)
+    # 2. RSI (Relative Strength Index)
+    delta = prices.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+    rs = gain / loss
+    df['RSI_14'] = 100 - (100 / (1 + rs))
     
-    macd, macdsignal, macdhist = talib.MACD(prices, fastperiod=12, slowperiod=26, signalperiod=9)
-    df['MACD'] = macd
-    df['MACD_Signal'] = macdsignal
+    # 3. MACD
+    ema_12 = prices.ewm(span=12, adjust=False).mean()
+    ema_26 = prices.ewm(span=26, adjust=False).mean()
+    df['MACD'] = ema_12 - ema_26
+    df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
     
     df.dropna(inplace=True)
     

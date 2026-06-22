@@ -42,28 +42,33 @@ Data Ingestion (LK-04): Skrip ingest_data.py telah selesai diimplementasikan unt
 
 Data Version Control (LK-05): DVC telah diinisialisasi dan dikonfigurasi. Data mentah (data/raw/) dan data hasil pemrosesan (data/processed/) kini dilacak sepenuhnya oleh DVC melalui file .dvc masing-masing, sementara file data aktualnya diabaikan oleh Git agar repositori tetap ringan.
 
+## Status Model Saat Ini (LK-07)
+Saat ini, model yang aktif digunakan untuk layanan inferensi (Production) adalah **BTC_Price_Predictor Versi 2**. Model ini dipilih karena memiliki tingkat galat (RMSE) terendah secara historis pada MLflow. 
+
+Metadata dan referensi (*Run ID*) dari model tersebut disimpan secara otomatis dalam file `model_metadata.yaml` dan dilacak menggunakan DVC (`model_metadata.yaml.dvc`) untuk menjamin *data lineage* yang utuh dari tahapan prapemrosesan hingga ke tahap deployment.
+
 Instruksi Penggunaan (Environment Setup)
 Proyek ini dirancang agar 100% reproducible menggunakan GitHub Codespaces, sehingga Anda tidak perlu melakukan instalasi manual di komputer lokal.
 
 Langkah-langkah menjalankan environment:
 
-Buka halaman utama repositori ini pada GitHub.
+1. Buka halaman utama repositori ini pada GitHub.
 
-Klik tombol hijau Code di pojok kanan atas tabel file.
+2. Klik tombol hijau Code di pojok kanan atas tabel file.
 
-Pilih tab Codespaces, lalu klik Create codespace on main.
+3. Pilih tab Codespaces, lalu klik Create codespace on main.
 
-Tunggu beberapa menit. GitHub akan secara otomatis:
+  - Tunggu beberapa menit. GitHub akan secara otomatis:
 
-Menyiapkan OS berbasis container.
+  - Menyiapkan OS berbasis container.
 
-Menginstal Python 3.10.
+  - Menginstal Python 3.10.
 
-Menginstal semua dependensi dari requirements.txt (DVC, Pandas, Scikit-learn, MLflow, FastAPI, dll).
+  - Menginstal semua dependensi dari requirements.txt (DVC, Pandas, Scikit-learn, MLflow, FastAPI, dll).
 
-Menyiapkan ekstensi VS Code (Jupyter, GitLens).
+  - Menyiapkan ekstensi VS Code (Jupyter, GitLens).
 
-Setelah VS Code terbuka di browser, Anda bisa langsung menjalankan script melalui terminal yang tersedia di bagian bawah layar.
+4. Setelah VS Code terbuka di browser, bisa langsung menjalankan script melalui terminal yang tersedia di bagian bawah layar.
 
 Alur Kerja / Pipeline Mendatang (Roadmap)
 [SELESAI] Data Ingestion: Fetching data periodik dari CoinGecko API & Data Versioning (DVC).

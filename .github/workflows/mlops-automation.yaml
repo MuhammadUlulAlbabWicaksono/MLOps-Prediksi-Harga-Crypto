@@ -36,6 +36,7 @@ jobs:
       # Autentikasi DVC
       - name: Configure DVC Credentials
         run: |
+          dvc remote add -d origin https://dagshub.com/MuhammadUlulAlbabWicaksono/MLOps-Prediksi-Harga-Crypto.dvc --force
           dvc remote modify origin --local auth basic
           dvc remote modify origin --local user ${{ secrets.DAGSHUB_USERNAME }}
           dvc remote modify origin --local password ${{ secrets.DAGSHUB_TOKEN }}

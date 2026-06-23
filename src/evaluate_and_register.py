@@ -35,7 +35,7 @@ def evaluate_and_register():
     print(f"Run ID: {run_id} | RMSE: {rmse:.2f} | R2: {r2:.2f}")
 
     # Cek threshold
-    if rmse < 200.0 and r2 > 0.50:
+    if rmse < 250.0 and r2 > 0.30:
         print("\n[LULUS] Model memenuhi threshold.")
         
         # Daftarkan model

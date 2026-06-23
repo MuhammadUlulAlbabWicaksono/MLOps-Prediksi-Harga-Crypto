@@ -8,6 +8,9 @@ import mlflow.xgboost
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import dagshub
+
+dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='MLOps-Prediksi-Harga-Crypto', mlflow=True)
 
 def get_latest_data():
     processed_files = glob.glob("data/processed/btc_processed_*.csv")

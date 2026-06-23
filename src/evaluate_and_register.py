@@ -1,6 +1,9 @@
 import sys
+import dagshub
 import mlflow
 from mlflow import MlflowClient
+
+dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='mlops-prediksi-harga-crypto', mlflow=True)
 
 def evaluate_and_register():
     print("\n--- MEMULAI EVALUASI & AUTO-REGISTRY ---")

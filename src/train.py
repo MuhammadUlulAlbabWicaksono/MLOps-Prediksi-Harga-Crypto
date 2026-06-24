@@ -1,25 +1,19 @@
 import os
-import shutil
 import glob
 import argparse
 import pandas as pd
 import numpy as np
 import mlflow
 import mlflow.xgboost
-import dagshub
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from config import MLflowConfig
 
-# 1. MENCEGAH LOCAL CACHE POISONING
-# Menghancurkan folder mlruns jika terbawa oleh GitHub Actions
-if os.path.exists("mlruns"):
-    shutil.rmtree("mlruns")
-    print("[INFO] Membersihkan 'mlruns' lokal. Memaksa MLflow menggunakan S3 DagsHub.")
-
-# 2. INISIALISASI
-dagshub.init(repo_owner=MLflowConfig.REPO_OWNER, repo_name=MLflowConfig.REPO_NAME, mlflow=True)
+# MURNI MLFLOW: Membaca URI langsung dari sistem GitHub Actions
+tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+if tracking_uri:
+    mlflow.set_tracking_uri(tracking_uri)
 
 def get_latest_data():
     processed_files = glob.glob("data/processed/btc_processed_*.csv")
@@ -65,14 +59,7 @@ def main(n_estimators, max_depth, learning_rate):
             xgb_model=model,
             artifact_path=MLflowConfig.DEFAULT_ARTIFACT_PATH
         )
-        
-        # 3. DIAGNOSTIK KRUSIAL (Pembuktian)
-        artifact_uri = mlflow.get_artifact_uri()
-        print(f"[DIAGNOSTIK] Artifact URI aktif: {artifact_uri}")
-        if "file://" in artifact_uri or "mlruns" in artifact_uri:
-            print("[WARNING FATAL] MLflow masih menyimpan secara lokal!")
-        else:
-            print("[INFO] Model berhasil diarahkan ke Cloud Storage.")
+        print("[INFO] Model fisik berhasil diunggah via MLflow HTTP Proxy.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -2,11 +2,10 @@
 import os
 
 class MLflowConfig:
-    REPO_OWNER = "MuhammadUlulAlbabWicaksono"
-    REPO_NAME = "MLOps-Prediksi-Harga-Crypto"
+    """Single Source of Truth untuk konfigurasi MLflow dan Model."""
     
-    # GANTI NAMA: Memutus rantai sejarah ke mlruns lokal
-    EXPERIMENT_NAME = "BTC_Production_V3" 
+    # EKSPERIMEN BARU: Memaksa pembuatan jalur proxy HTTP (S3) murni
+    EXPERIMENT_NAME = "BTC_Pipeline_Final"
     MODEL_NAME = "BTC_Price_Predictor"
     DEFAULT_ARTIFACT_PATH = "xgboost-model"
     

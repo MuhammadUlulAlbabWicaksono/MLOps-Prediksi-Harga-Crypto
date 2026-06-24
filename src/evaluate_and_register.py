@@ -1,15 +1,17 @@
+import os
 import sys
-import dagshub
 import mlflow
 from mlflow import MlflowClient
 
-# DIUBAH: Disamakan menjadi MLOps-Prediksi-Harga-Crypto
-dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='MLOps-Prediksi-Harga-Crypto', mlflow=True)
+tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+if tracking_uri:
+    mlflow.set_tracking_uri(tracking_uri)
 
 def evaluate_and_register():
     print("\n--- MEMULAI EVALUASI & AUTO-REGISTRY ---")
     client = MlflowClient()
-    experiment_name = "BTC_Pipeline_Production"
+    
+    experiment_name = "BTC_Model_Registry_Prod"
     model_name = "BTC_Price_Predictor"
     
     experiment = client.get_experiment_by_name(experiment_name)

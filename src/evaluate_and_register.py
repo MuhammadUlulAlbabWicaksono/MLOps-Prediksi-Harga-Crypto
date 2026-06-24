@@ -9,7 +9,7 @@ dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='MLOps-Prediksi-
 def evaluate_and_register():
     print("\n--- MEMULAI EVALUASI & AUTO-REGISTRY ---")
     client = MlflowClient()
-    experiment_name = "BTC_Price_Prediction_XGBoost"
+    experiment_name = "BTC_Pipeline_Production"
     model_name = "BTC_Price_Predictor"
     
     experiment = client.get_experiment_by_name(experiment_name)

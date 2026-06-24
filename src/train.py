@@ -37,7 +37,7 @@ def main(n_estimators, max_depth, learning_rate):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     
-    mlflow.set_experiment("BTC_Price_Prediction_XGBoost")
+    mlflow.set_experiment("BTC_Pipeline_Production")
     
     with mlflow.start_run():
         model = XGBRegressor(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, random_state=42)

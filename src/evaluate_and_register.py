@@ -3,7 +3,8 @@ import dagshub
 import mlflow
 from mlflow import MlflowClient
 
-dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='mlops-prediksi-harga-crypto', mlflow=True)
+# DIUBAH: Disamakan menjadi MLOps-Prediksi-Harga-Crypto
+dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='MLOps-Prediksi-Harga-Crypto', mlflow=True)
 
 def evaluate_and_register():
     print("\n--- MEMULAI EVALUASI & AUTO-REGISTRY ---")
@@ -11,13 +12,11 @@ def evaluate_and_register():
     experiment_name = "BTC_Price_Prediction_XGBoost"
     model_name = "BTC_Price_Predictor"
     
-    # Cari eksperimen
     experiment = client.get_experiment_by_name(experiment_name)
     if not experiment:
         print(f"Gagal: Eksperimen '{experiment_name}' tidak ditemukan.")
         sys.exit(1)
 
-    # Ambil Run terbaru
     runs = client.search_runs(
         experiment_ids=[experiment.experiment_id],
         order_by=["start_time DESC"],
@@ -37,15 +36,12 @@ def evaluate_and_register():
 
     print(f"Run ID: {run_id} | RMSE: {rmse:.2f} | R2: {r2:.2f}")
 
-    # Cek threshold
     if rmse < 250.0 and r2 > 0.30:
         print("\n[LULUS] Model memenuhi threshold.")
         
-        # Daftarkan model
         model_uri = f"runs:/{run_id}/xgboost-model"
         model_version = mlflow.register_model(model_uri=model_uri, name=model_name)
         
-        # Set alias staging
         client.set_registered_model_alias(
             name=model_name,
             alias="staging",
@@ -53,7 +49,6 @@ def evaluate_and_register():
         )
         print(f"SUKSES: Model '{model_name}' Versi {model_version.version} diset ke 'staging'.")
     else:
-        # Graceful exit
         print("\n[GAGAL] Metrik di bawah standar. Registrasi dibatalkan.")
         sys.exit(1) 
 

@@ -9,9 +9,9 @@ from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import dagshub
+from config import MLflowConfig
 
-# KEMBALIKAN DAGSHUB INIT (Sangat krusial untuk upload file artefak model)
-dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='MLOps-Prediksi-Harga-Crypto', mlflow=True)
+dagshub.init(repo_owner=MLflowConfig.REPO_OWNER, repo_name=MLflowConfig.REPO_NAME, mlflow=True)
 
 def get_latest_data():
     processed_files = glob.glob("data/processed/btc_processed_*.csv")
@@ -37,7 +37,7 @@ def main(n_estimators, max_depth, learning_rate):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     
     # TETAP GUNAKAN NAMA EKSPERIMEN BARU INI
-    mlflow.set_experiment("BTC_Model_Registry_Prod")
+    mlflow.set_experiment(MLflowConfig.EXPERIMENT_NAME)
     
     with mlflow.start_run():
         model = XGBRegressor(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, random_state=42)
@@ -60,6 +60,13 @@ def main(n_estimators, max_depth, learning_rate):
         
         mlflow.xgboost.log_model(model, "xgboost-model")
         print("SUKSES: Model fisik dikirim ke server DagsHub!")
+
+        print(f"[INFO] Menyimpan artefak model ke path: '{MLflowConfig.DEFAULT_ARTIFACT_PATH}'")
+        mlflow.xgboost.log_model(
+            xgb_model=model,
+            artifact_path=MLflowConfig.DEFAULT_ARTIFACT_PATH
+        )
+        print("[INFO] Model berhasil dikirim ke server!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

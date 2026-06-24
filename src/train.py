@@ -8,10 +8,10 @@ import mlflow.xgboost
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import dagshub
 
-tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-if tracking_uri:
-    mlflow.set_tracking_uri(tracking_uri)
+# KEMBALIKAN DAGSHUB INIT (Sangat krusial untuk upload file artefak model)
+dagshub.init(repo_owner='MuhammadUlulAlbabWicaksono', repo_name='MLOps-Prediksi-Harga-Crypto', mlflow=True)
 
 def get_latest_data():
     processed_files = glob.glob("data/processed/btc_processed_*.csv")
@@ -36,7 +36,7 @@ def main(n_estimators, max_depth, learning_rate):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     
-    # 2. EKSPERIMEN BARU: Memastikan lokasi artifact bersih di Cloud
+    # TETAP GUNAKAN NAMA EKSPERIMEN BARU INI
     mlflow.set_experiment("BTC_Model_Registry_Prod")
     
     with mlflow.start_run():
@@ -58,8 +58,8 @@ def main(n_estimators, max_depth, learning_rate):
         mlflow.log_metric("mae", mae)
         mlflow.log_metric("r2", r2)
         
-        # Menyimpan model fisik murni via MLflow API
         mlflow.xgboost.log_model(model, "xgboost-model")
+        print("SUKSES: Model fisik dikirim ke server DagsHub!")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

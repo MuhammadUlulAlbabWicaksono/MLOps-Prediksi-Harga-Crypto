@@ -1,8 +1,8 @@
 class MLflowConfig:
-    """Single Source of Truth untuk konfigurasi MLflow dan Model."""
+    REPO_OWNER = "MuhammadUlulAlbabWicaksono"
+    REPO_NAME = "mlops-prediksi-harga-crypto" 
     
-    # NAMA BARU: Memaksa pembuatan skema mlflow-artifacts:/ yang murni
-    EXPERIMENT_NAME = "BTC_MLOps_Registry"
+    EXPERIMENT_NAME = "BTC_Model_Registry_Final"
     MODEL_NAME = "BTC_Price_Predictor"
     DEFAULT_ARTIFACT_PATH = "xgboost-model"
     

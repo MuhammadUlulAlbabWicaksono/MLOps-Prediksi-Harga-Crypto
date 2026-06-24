@@ -1,6 +1,6 @@
-import os
 import sys
 import logging
+import dagshub
 import mlflow
 from mlflow import MlflowClient
 from mlflow.exceptions import MlflowException
@@ -9,9 +9,7 @@ from config import MLflowConfig
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger(__name__)
 
-tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-if tracking_uri:
-    mlflow.set_tracking_uri(tracking_uri)
+dagshub.init(repo_owner=MLflowConfig.REPO_OWNER, repo_name=MLflowConfig.REPO_NAME, mlflow=True)
 
 def evaluate_and_register():
     logger.info("=== MEMULAI EVALUASI & AUTO-REGISTRY ===")
@@ -40,20 +38,33 @@ def evaluate_and_register():
         logger.info(f"Metrik : RMSE = {rmse:.2f} | R2 = {r2:.2f}")
 
         if rmse >= MLflowConfig.THRESHOLDS["max_rmse"] or r2 <= MLflowConfig.THRESHOLDS["min_r2"]:
-            logger.error("Evaluasi GAGAL: Metrik tidak memenuhi standar minimum.")
+            logger.error("Evaluasi GAGAL: Metrik tidak memenuhi standar.")
             sys.exit(1)
             
         logger.info("Evaluasi LULUS: Model memenuhi standar threshold produksi.")
 
-        # Eksekusi instan tanpa polling (Aman karena menggunakan skema native)
-        model_uri = f"runs:/{run_id}/{MLflowConfig.DEFAULT_ARTIFACT_PATH}"
-        logger.info(f"Mencoba meregistrasi model dari URI target: {model_uri}")
+        # --- SOLUSI FUNDAMENTAL: BYPASS DOWNLOAD VALIDATION ---
+        # Menggunakan MlflowClient API low-level untuk menghindari bug download direktori
         
-        model_version = mlflow.register_model(
-            model_uri=model_uri, 
-            name=MLflowConfig.MODEL_NAME
+        # 1. Pastikan model container (Registry) sudah dibuat
+        try:
+            client.get_registered_model(MLflowConfig.MODEL_NAME)
+        except MlflowException:
+            logger.info(f"Membuat registry baru untuk '{MLflowConfig.MODEL_NAME}'")
+            client.create_registered_model(MLflowConfig.MODEL_NAME)
+        
+        # 2. Susun absolute source URI murni dari server
+        source_uri = f"{latest_run.info.artifact_uri}/{MLflowConfig.DEFAULT_ARTIFACT_PATH}"
+        logger.info(f"Mendaftarkan model langsung dari backend source: {source_uri}")
+        
+        # 3. Create model version (Langsung perintah ke backend, tanpa download lokal!)
+        model_version = client.create_model_version(
+            name=MLflowConfig.MODEL_NAME,
+            source=source_uri,
+            run_id=run_id
         )
         
+        # 4. Set Alias Staging
         client.set_registered_model_alias(
             name=MLflowConfig.MODEL_NAME,
             alias="staging",

@@ -5,15 +5,13 @@ import pandas as pd
 import numpy as np
 import mlflow
 import mlflow.xgboost
+import dagshub
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from config import MLflowConfig
 
-# MURNI MLFLOW: Memanfaatkan Environment Variables dari GitHub Actions
-tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-if tracking_uri:
-    mlflow.set_tracking_uri(tracking_uri)
+dagshub.init(repo_owner=MLflowConfig.REPO_OWNER, repo_name=MLflowConfig.REPO_NAME, mlflow=True)
 
 def get_latest_data():
     processed_files = glob.glob("data/processed/btc_processed_*.csv")
@@ -49,19 +47,14 @@ def main(n_estimators, max_depth, learning_rate):
         mae = mean_absolute_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
         
-        print(f"[INFO] RMSE: {rmse:.2f} | MAE: {mae:.2f} | R2: {r2:.4f}")
-        
         mlflow.log_params({"n_estimators": n_estimators, "max_depth": max_depth, "learning_rate": learning_rate})
         mlflow.log_metrics({"rmse": rmse, "mae": mae, "r2": r2})
         
-        print(f"[INFO] Menyimpan model ke path: {MLflowConfig.DEFAULT_ARTIFACT_PATH}")
         mlflow.xgboost.log_model(
             xgb_model=model,
             artifact_path=MLflowConfig.DEFAULT_ARTIFACT_PATH
         )
-        
-        print(f"[DIAGNOSTIK] Skema Artifact URI: {mlflow.get_artifact_uri()}")
-        print("[INFO] Model fisik selesai dikirim via MLflow HTTP Proxy.")
+        print("[INFO] Model fisik selesai dikirim ke DagsHub.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

@@ -31,8 +31,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # Instalasi eksplisit untuk memastikan dagshub dan dvc tersedia
-          pip install dagshub dvc dvc-s3
+          pip install pytest dagshub dvc dvc-s3
 
       # Autentikasi DVC
       - name: Configure DVC Credentials

@@ -1,9 +1,8 @@
 class MLflowConfig:
-    REPO_OWNER = "MuhammadUlulAlbabWicaksono"
-    # UBAH: Gunakan huruf kecil semua sesuai URL DagsHub untuk mencegah S3 Path Error
-    REPO_NAME = "mlops-prediksi-harga-crypto" 
+    """Single Source of Truth untuk konfigurasi MLflow dan Model."""
     
-    EXPERIMENT_NAME = "BTC_Pipeline_Final"
+    # NAMA BARU: Memaksa pembuatan skema mlflow-artifacts:/ yang murni
+    EXPERIMENT_NAME = "BTC_MLOps_Registry"
     MODEL_NAME = "BTC_Price_Predictor"
     DEFAULT_ARTIFACT_PATH = "xgboost-model"
     

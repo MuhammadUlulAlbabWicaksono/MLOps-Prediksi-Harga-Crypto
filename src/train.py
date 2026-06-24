@@ -5,14 +5,15 @@ import pandas as pd
 import numpy as np
 import mlflow
 import mlflow.xgboost
-import dagshub
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from config import MLflowConfig
 
-# Wajib di CI/CD untuk memastikan jalur upload artifact ke S3 DagsHub terhubung
-dagshub.init(repo_owner=MLflowConfig.REPO_OWNER, repo_name=MLflowConfig.REPO_NAME, mlflow=True)
+# MURNI MLFLOW: Memanfaatkan Environment Variables dari GitHub Actions
+tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+if tracking_uri:
+    mlflow.set_tracking_uri(tracking_uri)
 
 def get_latest_data():
     processed_files = glob.glob("data/processed/btc_processed_*.csv")
@@ -58,7 +59,9 @@ def main(n_estimators, max_depth, learning_rate):
             xgb_model=model,
             artifact_path=MLflowConfig.DEFAULT_ARTIFACT_PATH
         )
-        print("[INFO] Model fisik selesai dikirim. Transisi ke tahap evaluasi...")
+        
+        print(f"[DIAGNOSTIK] Skema Artifact URI: {mlflow.get_artifact_uri()}")
+        print("[INFO] Model fisik selesai dikirim via MLflow HTTP Proxy.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

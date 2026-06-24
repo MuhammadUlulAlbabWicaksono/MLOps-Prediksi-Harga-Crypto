@@ -1,10 +1,8 @@
-# src/config.py
-import os
-
 class MLflowConfig:
-    """Single Source of Truth untuk konfigurasi MLflow dan Model."""
+    REPO_OWNER = "MuhammadUlulAlbabWicaksono"
+    # UBAH: Gunakan huruf kecil semua sesuai URL DagsHub untuk mencegah S3 Path Error
+    REPO_NAME = "mlops-prediksi-harga-crypto" 
     
-    # EKSPERIMEN BARU: Memaksa pembuatan jalur proxy HTTP (S3) murni
     EXPERIMENT_NAME = "BTC_Pipeline_Final"
     MODEL_NAME = "BTC_Price_Predictor"
     DEFAULT_ARTIFACT_PATH = "xgboost-model"

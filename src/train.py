@@ -1,16 +1,24 @@
 import os
+import shutil
 import glob
 import argparse
 import pandas as pd
 import numpy as np
 import mlflow
 import mlflow.xgboost
+import dagshub
 from xgboost import XGBRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import dagshub
 from config import MLflowConfig
 
+# 1. MENCEGAH LOCAL CACHE POISONING
+# Menghancurkan folder mlruns jika terbawa oleh GitHub Actions
+if os.path.exists("mlruns"):
+    shutil.rmtree("mlruns")
+    print("[INFO] Membersihkan 'mlruns' lokal. Memaksa MLflow menggunakan S3 DagsHub.")
+
+# 2. INISIALISASI
 dagshub.init(repo_owner=MLflowConfig.REPO_OWNER, repo_name=MLflowConfig.REPO_NAME, mlflow=True)
 
 def get_latest_data():
@@ -21,7 +29,7 @@ def get_latest_data():
 
 def main(n_estimators, max_depth, learning_rate):
     latest_file = get_latest_data()
-    print(f"Menggunakan dataset: {latest_file}")
+    print(f"[INFO] Dataset: {latest_file}")
     
     df = pd.read_csv(latest_file)
     df['datetime'] = pd.to_datetime(df['datetime'])
@@ -36,7 +44,6 @@ def main(n_estimators, max_depth, learning_rate):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
     
-    # TETAP GUNAKAN NAMA EKSPERIMEN BARU INI
     mlflow.set_experiment(MLflowConfig.EXPERIMENT_NAME)
     
     with mlflow.start_run():
@@ -48,25 +55,24 @@ def main(n_estimators, max_depth, learning_rate):
         mae = mean_absolute_error(y_test, predictions)
         r2 = r2_score(y_test, predictions)
         
-        print(f"Metrik Model -> RMSE: {rmse:.2f} | MAE: {mae:.2f} | R2: {r2:.4f}")
+        print(f"[INFO] RMSE: {rmse:.2f} | MAE: {mae:.2f} | R2: {r2:.4f}")
         
-        mlflow.log_param("n_estimators", n_estimators)
-        mlflow.log_param("max_depth", max_depth)
-        mlflow.log_param("learning_rate", learning_rate)
+        mlflow.log_params({"n_estimators": n_estimators, "max_depth": max_depth, "learning_rate": learning_rate})
+        mlflow.log_metrics({"rmse": rmse, "mae": mae, "r2": r2})
         
-        mlflow.log_metric("rmse", rmse)
-        mlflow.log_metric("mae", mae)
-        mlflow.log_metric("r2", r2)
-        
-        mlflow.xgboost.log_model(model, "xgboost-model")
-        print("SUKSES: Model fisik dikirim ke server DagsHub!")
-
-        print(f"[INFO] Menyimpan artefak model ke path: '{MLflowConfig.DEFAULT_ARTIFACT_PATH}'")
+        print(f"[INFO] Menyimpan model ke path: {MLflowConfig.DEFAULT_ARTIFACT_PATH}")
         mlflow.xgboost.log_model(
             xgb_model=model,
             artifact_path=MLflowConfig.DEFAULT_ARTIFACT_PATH
         )
-        print("[INFO] Model berhasil dikirim ke server!")
+        
+        # 3. DIAGNOSTIK KRUSIAL (Pembuktian)
+        artifact_uri = mlflow.get_artifact_uri()
+        print(f"[DIAGNOSTIK] Artifact URI aktif: {artifact_uri}")
+        if "file://" in artifact_uri or "mlruns" in artifact_uri:
+            print("[WARNING FATAL] MLflow masih menyimpan secara lokal!")
+        else:
+            print("[INFO] Model berhasil diarahkan ke Cloud Storage.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

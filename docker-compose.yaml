@@ -102,27 +102,24 @@ services:
       interval: 15s
       timeout: 5s
       retries: 5
-
-  api-service:
-    build: 
-      context: .
-      dockerfile: Dockerfile
-    container_name: mlops_fastapi
-    restart: unless-stopped
-    depends_on:
-      mlflow-service:
-        condition: service_healthy
-    environment:
-      MLFLOW_TRACKING_URI: http://mlflow-service:5000
-      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
-      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
-      MLFLOW_S3_ENDPOINT_URL: http://s3-service:9000
-    ports:
-      - "8000:8000"
+  model-serving-api:
+    image: btc_model_serving:latest
+    expose:
+      - "8080"
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
     networks:
       - mlops_network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 15s
-      timeout: 5s
-      retries: 5
+  nginx-lb:
+    image: nginx:alpine
+    container_name: mlops_nginx_lb
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - model-serving-api
+    networks:
+      - mlops_network

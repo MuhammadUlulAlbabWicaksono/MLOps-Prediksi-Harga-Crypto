@@ -1,0 +1,128 @@
+networks:
+  mlops_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: btc_postgres_data
+  minio_data:
+    name: btc_minio_data
+  mlflow_artifacts:
+    name: btc_mlflow_artifacts
+
+services:
+  db-service:
+    image: postgres:15-alpine
+    container_name: mlops_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    networks:
+      - mlops_network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  s3-service:
+    image: minio/minio:latest
+    container_name: mlops_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    networks:
+      - mlops_network
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  init-s3:
+    image: minio/mc:latest
+    container_name: mlops_minio_init
+    depends_on:
+      s3-service:
+        condition: service_healthy
+    networks:
+      - mlops_network
+    entrypoint: >
+      /bin/sh -c "
+      echo 'Menunggu MinIO siap...';
+      sleep 3;
+      mc alias set minio_local http://s3-service:9000 ${S3_ACCESS_KEY} ${S3_SECRET_KEY};
+      mc mb minio_local/${MLFLOW_BUCKET_NAME} || true;
+      mc anonymous set public minio_local/${MLFLOW_BUCKET_NAME};
+      echo 'S3 Bucket Initialization Sukses!';
+      exit 0;
+      "
+
+  mlflow-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.mlflow
+    container_name: mlops_mlflow
+    restart: unless-stopped
+    depends_on:
+      db-service:
+        condition: service_healthy
+      init-s3:
+        condition: service_completed_successfully
+    environment:
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      MLFLOW_S3_ENDPOINT_URL: http://s3-service:9000
+    networks:
+      - mlops_network
+    ports:
+      - "5000:5000"
+    command: >
+      mlflow server 
+      --backend-store-uri postgresql://${DB_USER}:${DB_PASSWORD}@db-service:5432/${DB_NAME} 
+      --default-artifact-root s3://${MLFLOW_BUCKET_NAME}/ 
+      --host 0.0.0.0 
+      --port 5000 
+      --allowed-hosts "*"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  api-service:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: mlops_fastapi
+    restart: unless-stopped
+    depends_on:
+      mlflow-service:
+        condition: service_healthy
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow-service:5000
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      MLFLOW_S3_ENDPOINT_URL: http://s3-service:9000
+    ports:
+      - "8000:8000"
+    networks:
+      - mlops_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5

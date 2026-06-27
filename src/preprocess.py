@@ -28,7 +28,7 @@ def preprocess_latest_data():
     
     df.ffill(inplace=True)
     
-    print("Mengekstraksi fitur teknikal (MA, RSI, MACD) menggunakan Pandas native...")
+    print("Mengekstraksi fitur teknikal dan kontekstual...")
     prices = df['price']
     
     # 1. Moving Averages (MA)
@@ -48,6 +48,12 @@ def preprocess_latest_data():
     df['MACD'] = ema_12 - ema_26
     df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
     
+    # 4. EKSTRAKSI FITUR BARU: Kontekstual & Volatilitas
+    df['Price_Lag_1'] = prices.shift(1)
+    df['Price_Lag_2'] = prices.shift(2)
+    df['Volatility_7d'] = prices.rolling(window=7).std()
+    
+    # Menghapus baris NaN yang dihasilkan dari indikator rolling/shift
     df.dropna(inplace=True)
     
     os.makedirs("data/processed", exist_ok=True)

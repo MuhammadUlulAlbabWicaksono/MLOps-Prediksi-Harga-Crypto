@@ -30,7 +30,7 @@ def main(n_estimators, max_depth, learning_rate):
     df['target_price'] = df['price'].shift(-1)
     df.dropna(inplace=True) 
     
-    features = ['price', 'market_cap', 'volume', 'MA_7', 'MA_30', 'RSI_14', 'MACD', 'MACD_Signal']
+    features = ['price', 'market_cap', 'volume', 'MA_7', 'MA_30', 'RSI_14', 'MACD', 'MACD_Signal', 'Price_Lag_1', 'Price_Lag_2', 'Volatility_7d']
     X = df[features]
     y = df['target_price']
     
@@ -39,7 +39,14 @@ def main(n_estimators, max_depth, learning_rate):
     mlflow.set_experiment(MLflowConfig.EXPERIMENT_NAME)
     
     with mlflow.start_run():
-        model = XGBRegressor(n_estimators=n_estimators, max_depth=max_depth, learning_rate=learning_rate, random_state=42)
+        model = XGBRegressor(
+            n_estimators=n_estimators,
+            learning_rate=learning_rate,
+            max_depth=max_depth,
+            subsample=0.8,
+            colsample_bytree=0.8,
+            random_state=42
+        )
         model.fit(X_train, y_train)
         
         predictions = model.predict(X_test)
@@ -58,8 +65,8 @@ def main(n_estimators, max_depth, learning_rate):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--n_estimators", type=int, default=100)
-    parser.add_argument("--max_depth", type=int, default=3)
-    parser.add_argument("--learning_rate", type=float, default=0.1)
+    parser.add_argument("--n_estimators", type=int, default=500)
+    parser.add_argument("--max_depth", type=int, default=6)
+    parser.add_argument("--learning_rate", type=float, default=0.05)
     args = parser.parse_args()
     main(args.n_estimators, args.max_depth, args.learning_rate)

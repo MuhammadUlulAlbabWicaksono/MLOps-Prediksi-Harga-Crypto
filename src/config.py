@@ -7,6 +7,6 @@ class MLflowConfig:
     DEFAULT_ARTIFACT_PATH = "xgboost-model"
     
     THRESHOLDS = {
-        "max_rmse": 250.0,
-        "min_r2": 0.30
+        "max_rmse": 2000.0,
+        "min_r2": 0.80
     }

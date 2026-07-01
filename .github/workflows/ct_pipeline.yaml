@@ -1,0 +1,50 @@
+name: Continuous Training Pipeline
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  repository_dispatch:
+    types: [grafana_alert_retrain]
+
+jobs:
+  continuous_training:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure Cloud Credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        run: |
+          echo "Cloud credentials configured for DVC and MLflow."
+
+      - name: Pull Latest Dataset via DVC
+        run: |
+          dvc pull
+
+      - name: Execute Model Retraining
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: |
+          echo "Starting model retraining on latest data..."
+          python src/train.py
+
+      - name: Evaluate and Promote (Champion vs Challenger)
+        env:
+          MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+        run: |
+          echo "Comparing Challenger model against current Champion..."
+          python src/evaluate_and_promote.py

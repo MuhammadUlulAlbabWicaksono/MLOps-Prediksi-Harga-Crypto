@@ -1,0 +1,15 @@
+FROM python:3.10-slim
+
+# Instal dependensi yang dibutuhkan oleh model dan API
+RUN pip install --no-cache-dir fastapi uvicorn prometheus-client mlflow xgboost pandas scikit-learn
+
+WORKDIR /app
+
+# Salin folder model asli dan skrip API Anda ke dalam kontainer
+COPY model_lokal /app/model_lokal
+COPY serving_api.py /app/serving_api.py
+
+EXPOSE 8080
+
+# Jalankan server
+CMD ["uvicorn", "serving_api:app", "--host", "0.0.0.0", "--port", "8080"]

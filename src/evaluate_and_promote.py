@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 MODEL_NAME = MLflowConfig.MODEL_NAME
 
 def evaluate_and_promote():
-    # 1. Inisialisasi Otentikasi DagsHub (Headless Mode)
     logger.info("Menginisialisasi koneksi ke DagsHub...")
     dagshub.init(
         repo_owner=MLflowConfig.REPO_OWNER, 
@@ -22,59 +21,69 @@ def evaluate_and_promote():
     client = MlflowClient()
     
     try:
-        # 2. Dapatkan model Champion (Production) saat ini
-        logger.info(f"Mencari model Champion '{MODEL_NAME}' di stage Production...")
-        champion_version = client.get_latest_versions(MODEL_NAME, stages=["Production"])[0]
+        # 1. Ambil SEMUA versi model sekaligus (Bypass bug API yang deprecated)
+        logger.info(f"Mengambil seluruh riwayat versi model '{MODEL_NAME}'...")
+        all_versions = client.search_model_versions(f"name='{MODEL_NAME}'")
+        
+        if not all_versions:
+            logger.error("GAGAL: Model belum terdaftar sama sekali di DagsHub.")
+            sys.exit(1)
+
+        # Urutkan dari versi terbaru (angka terbesar) ke terlama
+        all_versions_sorted = sorted(all_versions, key=lambda v: int(v.version), reverse=True)
+
+        # 2. Cari Champion (Model dengan stage/alias Production, ATAU ambil versi paling awal jika belum ada)
+        champion_version = None
+        for v in all_versions_sorted:
+            # Mencocokkan baik sistem lama (stages) maupun sistem baru (aliases)
+            if v.current_stage.lower() == "production" or "Production" in v.aliases or "production" in v.aliases:
+                champion_version = v
+                break
+                
+        if not champion_version:
+            logger.warning("Label 'Production' tidak ditemukan. Menggunakan versi TERLAMA sebagai Champion sementara.")
+            champion_version = all_versions_sorted[-1] # Menjadikan V1 sebagai Champion default
+
+        # 3. Cari Challenger (Model versi terbaru yang BUKAN Champion)
+        challenger_version = None
+        for v in all_versions_sorted:
+            if v.version != champion_version.version:
+                challenger_version = v
+                break
+                
+        if not challenger_version:
+            logger.error("GAGAL: Hanya ada 1 versi model di registry. CT Pipeline membutuhkan minimal 2 versi (Model Lama vs Model Baru).")
+            sys.exit(1)
+
+        # 4. Tarik Metrik Kedua Model
+        logger.info(f"Champion terpilih: Version {champion_version.version}")
         champion_run = client.get_run(champion_version.run_id)
         champion_rmse = champion_run.data.metrics.get("rmse", float('inf'))
         champion_r2 = champion_run.data.metrics.get("r2", float('-inf'))
-        
-        logger.info(f"Champion (Version {champion_version.version}): RMSE = {champion_rmse:.2f}, R2 = {champion_r2:.2f}")
+        logger.info(f"Metrik Champion: RMSE = {champion_rmse:.2f}, R2 = {champion_r2:.2f}")
 
-        # 3. Dapatkan model Challenger (Terbaru, Staging/None)
-        logger.info(f"Mencari model Challenger '{MODEL_NAME}' terbaru...")
-        challenger_version = client.get_latest_versions(MODEL_NAME, stages=["None", "Staging"])[0]
+        logger.info(f"Challenger terpilih: Version {challenger_version.version}")
         challenger_run = client.get_run(challenger_version.run_id)
         challenger_rmse = challenger_run.data.metrics.get("rmse", float('inf'))
         challenger_r2 = challenger_run.data.metrics.get("r2", float('-inf'))
-        
-        logger.info(f"Challenger (Version {challenger_version.version}): RMSE = {challenger_rmse:.2f}, R2 = {challenger_r2:.2f}")
+        logger.info(f"Metrik Challenger: RMSE = {challenger_rmse:.2f}, R2 = {challenger_r2:.2f}")
 
-        # 4. Logika Komparasi Matematika (Challenger vs Champion)
+        # 5. Logika Komparasi
         is_rmse_better = challenger_rmse < champion_rmse
         is_r2_better = challenger_r2 > champion_r2
 
         if is_rmse_better and is_r2_better:
-            logger.info("Challenger outperforms Champion! Initiating promotion to Production...")
-            
-            # Demote Champion lama ke Archived
-            client.transition_model_version_stage(
-                name=MODEL_NAME,
-                version=champion_version.version,
-                stage="Archived"
-            )
-            
-            # Promote Challenger baru ke Production
-            client.transition_model_version_stage(
-                name=MODEL_NAME,
-                version=challenger_version.version,
-                stage="Production"
-            )
-            logger.info("Promotion successful. New Champion installed.")
+            logger.info("Challenger outperforms Champion! Initiating promotion...")
+            # Gunakan Aliases (Metode Modern MLflow)
+            client.set_registered_model_alias(MODEL_NAME, "Production", challenger_version.version)
+            client.set_registered_model_alias(MODEL_NAME, "Archived", champion_version.version)
+            logger.info("Promotion successful. New Champion installed via Aliases.")
         else:
             logger.info("Challenger failed to outperform Champion. Discarding Challenger.")
-            client.transition_model_version_stage(
-                name=MODEL_NAME,
-                version=challenger_version.version,
-                stage="Archived"
-            )
+            client.set_registered_model_alias(MODEL_NAME, "Archived", challenger_version.version)
 
-    except IndexError:
-        logger.error("GAGAL: Tidak dapat menemukan versi model Champion/Challenger di MLflow registry.")
-        logger.error("Solusi: Pastikan Anda sudah mendaftarkan model pertama secara manual ke stage 'Production' di DagsHub UI.")
-        sys.exit(1)
     except Exception as e:
-        logger.error(f"Terjadi kesalahan sistem yang tidak terduga saat evaluasi: {str(e)}")
+        logger.error(f"Terjadi kesalahan sistem: {str(e)}")
         sys.exit(1)
 
 if __name__ == "__main__":

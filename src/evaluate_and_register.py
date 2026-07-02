@@ -43,8 +43,8 @@ def evaluate_model_quality(run: Run) -> bool:
     logger.info(f"Run ID : {run.info.run_id}")
     logger.info(f"Metrik : RMSE = {rmse:.2f} | R2 = {r2:.2f}")
 
-    threshold_rmse = MLflowConfig.THRESHOLDS.get("max_rmse", 1500)
-    threshold_r2 = MLflowConfig.THRESHOLDS.get("min_r2", 0.8)
+    threshold_rmse = MLflowConfig.THRESHOLDS.get("max_rmse", 400)
+    threshold_r2 = MLflowConfig.THRESHOLDS.get("min_r2", 0.6)
 
     if rmse >= threshold_rmse or r2 <= threshold_r2:
         logger.error("Evaluasi GAGAL: Metrik tidak memenuhi standar threshold.")

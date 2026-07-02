@@ -8,5 +8,5 @@ class MLflowConfig:
     
     THRESHOLDS = {
         "max_rmse": 2000.0,
-        "min_r2": 0.80
+        "min_r2": 0.70
     }

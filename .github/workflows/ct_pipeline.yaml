@@ -40,6 +40,9 @@ jobs:
       - name: Execute Model Retraining
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          DAGSHUB_USER_TOKEN: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          MLFLOW_TRACKING_USERNAME: ${{ github.repository_owner }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.AWS_ACCESS_KEY_ID }}
         run: |
           echo "Starting model retraining on latest data..."
           python src/train.py
@@ -47,6 +50,9 @@ jobs:
       - name: Evaluate and Promote (Champion vs Challenger)
         env:
           MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
+          DAGSHUB_USER_TOKEN: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          MLFLOW_TRACKING_USERNAME: ${{ github.repository_owner }}
+          MLFLOW_TRACKING_PASSWORD: ${{ secrets.AWS_ACCESS_KEY_ID }}
         run: |
           echo "Comparing Challenger model against current Champion..."
           python src/evaluate_and_promote.py
